@@ -17,8 +17,8 @@ class LoginPageState extends State<LoginPage> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   bool isHide = true;
 
-  TextEditingController emailController = TextEditingController(); 
-  TextEditingController passwordController = TextEditingController(); 
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -199,7 +199,7 @@ class LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                              onPressed: () async{
+                              onPressed: () async {
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (context) => const SigninPage()));
                               },
@@ -220,30 +220,31 @@ class LoginPageState extends State<LoginPage> {
                         padding:
                             const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 16),
                         child: ElevatedButton(
-                          onPressed: () async{
-                            Map data = await DatabaseWidgetGenerator.login(emailController.text, passwordController.text);
-                            if (data["memberType"] == MemberType.user){
-                            // gatau kenapa
-                            // ignore: use_build_context_synchronously
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) =>  MemberPage(
-                                id: data["id"],
-                                name: data["name"],
-                                tingkat: data["tingkat"],
-                                sisaPinjam: data["sisa_pinjam"],
-                                tglBalik: data["tgl_balik"],
-                              )));   
-                            }
-                            else if (data["memberType"] == MemberType.admin){
+                          onPressed: () async {
+                            print("object");
+                            Map data = await DatabaseWidgetGenerator.login(
+                                emailController.text, passwordController.text);
+                            if (data["memberType"] == MemberType.user) {
+                              // gatau kenapa
                               // ignore: use_build_context_synchronously
                               Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => const AdminHomePage()));
-                            }
-                            else{
+                                  builder: (context) => MemberPage(
+                                        id: data["id"],
+                                        name: data["name"],
+                                        tingkat: data["tingkat"],
+                                        sisaPinjam: data["sisa_pinjam"],
+                                        tglBalik: data["tgl_balik"],
+                                      )));
+                            } else if (data["memberType"] == MemberType.admin) {
+                              // ignore: use_build_context_synchronously
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => const AdminHomePage()));
+                            } else {
                               // ignore: use_build_context_synchronously
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Ups.. Username atau Password salah '),
+                                  content: Text(
+                                      'Ups.. Username atau Password salah '),
                                 ),
                               );
                             }
