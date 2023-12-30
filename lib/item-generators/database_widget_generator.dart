@@ -2,30 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:library_app/db-handler/sqlite_handler.dart';
 import 'package:library_app/item-generators/admin_member_card.dart';
-import 'package:library_app/model/admin.dart';
 import 'package:sqflite/sqflite.dart';
 import 'book_card.dart';
 import 'book_of_the_week_card.dart';
 import 'package:library_app/constants/membertype.dart';
-import 'package:library_app/item-generators/member_card.dart';
-
-// TODO genre based generation
 
 class DatabaseWidgetGenerator {
-  static Future<bool> isMemberUnique(String name) async{
+  static Future<bool> isMemberUnique(String name) async {
     Database db = await SqliteHandler().myOpenDatabase();
-    final nameList = await db.query("user_account", where: "username=?", whereArgs: [name]);
+    final nameList =
+        await db.query("user_account", where: "username=?", whereArgs: [name]);
     return nameList[0]["username"] == null;
   }
-  static Future<String> _generateReadMeId() async{
+
+  static Future<String> _generateReadMeId() async {
     Database db = await SqliteHandler().myOpenDatabase();
     final memberKeyTable =
-      await db.rawQuery("SELECT MAX(ROWID) AS id FROM member");
+        await db.rawQuery("SELECT MAX(ROWID) AS id FROM member");
     int rowid = memberKeyTable[0]["id"] as int;
-    int rowidOffset = rowid+3100;
-    String memberKey = "Readme-${rowidOffset.toString().padLeft(4,'0')}";
+    int rowidOffset = rowid + 3100;
+    String memberKey = "Readme-${rowidOffset.toString().padLeft(4, '0')}";
     return memberKey;
   }
+
   static Future<Map> login(String username, String password) async {
     Database db = await SqliteHandler().myOpenDatabase();
     final dataList = await db.rawQuery(
@@ -61,7 +60,7 @@ class DatabaseWidgetGenerator {
     Database db = await SqliteHandler().myOpenDatabase();
     String readmeId = await DatabaseWidgetGenerator._generateReadMeId();
     await db.insert("member", {
-      "id_member":readmeId,
+      "id_member": readmeId,
       "nama_member": name,
       "id_tingkat": 0,
       "sisa_kuota": 3,
@@ -70,69 +69,55 @@ class DatabaseWidgetGenerator {
     await db.insert("user_account",
         {"username": name, "password": password, "id_member": readmeId});
   }
+
   static void changeMemberInfo(
-    String idMember,
-    String username,
-    String password
-  )
-  async {
+      String idMember, String username, String password) async {
     Database db = await SqliteHandler().myOpenDatabase();
-    if(username.isEmpty && password.isEmpty){
+    if (username.isEmpty && password.isEmpty) {
       // dont do anything
       return;
     }
-    if(username.isEmpty){
-      await db.update("user_account",
-      {
-        "password":password
-      },
-      where: 'id_member = ?',
-      whereArgs: [idMember]);
+    if (username.isEmpty) {
+      await db.update("user_account", {"password": password},
+          where: 'id_member = ?', whereArgs: [idMember]);
       return;
     }
-    if (password.isEmpty){
-      await db.update("user_account", 
-      {
-        "username":username
-      },
-      where: 'id_member = ?',
-      whereArgs: [idMember]);
-      await db.update("member", 
-      {
-        "nama_member":username,
-      },
-      where: "id_member = ?",
-      whereArgs: [idMember]
-      );
+    if (password.isEmpty) {
+      await db.update("user_account", {"username": username},
+          where: 'id_member = ?', whereArgs: [idMember]);
+      await db.update(
+          "member",
+          {
+            "nama_member": username,
+          },
+          where: "id_member = ?",
+          whereArgs: [idMember]);
       return;
     }
-    await db.update("user_account", 
-    {
-      "username":username,
-      "password":password
-    },
-    where: 'id_member = ?',
-    whereArgs: [idMember]);
-    await db.update("member", 
-    {
-      "nama_member":username,
-    },
-    where: "id_member = ?",
-    whereArgs: [idMember]
-    );
+    await db.update(
+        "user_account", {"username": username, "password": password},
+        where: 'id_member = ?', whereArgs: [idMember]);
+    await db.update(
+        "member",
+        {
+          "nama_member": username,
+        },
+        where: "id_member = ?",
+        whereArgs: [idMember]);
     return;
   }
-  // tinggal di implement 
+
+  // tinggal di implement
   static Future<List<AdminMemberCard>> _generateAdminMemberCardsFromDB() async {
     Database db = await SqliteHandler().myOpenDatabase();
     final dataList = await db.query("member");
     return List.generate(
-      dataList.length,
-      (index) => AdminMemberCard(nama: 
-      dataList[index]["username"] as String,
-      pass: dataList[index]["password"] as String)
-    );
+        dataList.length,
+        (index) => AdminMemberCard(
+            nama: dataList[index]["username"] as String,
+            pass: dataList[index]["password"] as String));
   }
+
   static Future<List<BookOfTheWeekCard>> _generateBookOfTheWeekCardFromDB(
       String parent,
       {String? idMember}) async {
@@ -152,19 +137,18 @@ class DatabaseWidgetGenerator {
     );
   }
 
-  static Future<List<BookCard>> _generateBookCardFromDB(String parent, {String? genre, String? idMember}) async {
+  static Future<List<BookCard>> _generateBookCardFromDB(String parent,
+      {String? genre, String? idMember}) async {
     Database db = await SqliteHandler().myOpenDatabase();
-    List<Map> dataList = [{}] ;
-    if (genre != null){
-      String sql = 
-"""SELECT * FROM buku 
+    List<Map> dataList = [{}];
+    if (genre != null) {
+      String sql = """SELECT * FROM buku 
 LEFT JOIN genre_buku ON buku.id_buku = genre_buku.id_buku
 LEFT JOIN genre ON genre_buku.id_genre = genre.id_genre
 WHERE genre.nama_genre = ?;""";
-      dataList = await db.rawQuery(sql,[genre]);
-    }
-    else{
-       dataList = await db.rawQuery('SELECT * FROM buku');
+      dataList = await db.rawQuery(sql, [genre]);
+    } else {
+      dataList = await db.rawQuery('SELECT * FROM buku');
     }
 
     return List.generate(
@@ -175,48 +159,48 @@ WHERE genre.nama_genre = ?;""";
         sinopsis: dataList[index]["sinopsis"] as String,
         imagePath: dataList[index]["foto_sampul"] as String?,
         idBuku: dataList[index]["id_buku"] as int,
-        idMember:  idMember,
+        idMember: idMember,
       ),
     );
   }
 
-  static FutureBuilder<List<AdminMemberCard>> makeAdminMemberCards(){
-    return FutureBuilder(future: DatabaseWidgetGenerator._generateAdminMemberCardsFromDB(), 
-    builder: ((context, snapshot) {
+  static FutureBuilder<List<AdminMemberCard>> makeAdminMemberCards() {
+    return FutureBuilder(
+        future: DatabaseWidgetGenerator._generateAdminMemberCardsFromDB(),
+        builder: ((context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } 
-        else{
-          List<AdminMemberCard> adminMemberCard = snapshot.data ?? [];
-          if (adminMemberCard.isEmpty){
-            return const AdminMemberCard(nama: "placeholder", pass: "place_holder");
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            List<AdminMemberCard> adminMemberCard = snapshot.data ?? [];
+            if (adminMemberCard.isEmpty) {
+              return const AdminMemberCard(
+                  nama: "placeholder", pass: "place_holder");
+            } else {
+              // sepuh kepin tolong dong kalo salah wkkwkw
+              return SizedBox(
+                height: 260,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  shrinkWrap: false,
+                  itemCount: adminMemberCard.length,
+                  itemBuilder: (context, index) {
+                    return adminMemberCard[index];
+                  },
+                ),
+              );
+            }
           }
-          else{
-            // sepuh kepin tolong dong kalo salah wkkwkw
-            return SizedBox(
-              height: 260,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                shrinkWrap: false,
-                itemCount: adminMemberCard.length,
-                itemBuilder: (context, index) {
-                  return adminMemberCard[index];
-                },
-              ),
-            );
-          }
-
-        }
-    }) );
+        }));
   }
 
   static FutureBuilder<List<BookOfTheWeekCard>> makeBookOfTheWeekCards(
       String parent,
       {String? idMember}) {
     return FutureBuilder(
-      future: DatabaseWidgetGenerator._generateBookOfTheWeekCardFromDB(parent, idMember: idMember),
+      future: DatabaseWidgetGenerator._generateBookOfTheWeekCardFromDB(parent,
+          idMember: idMember),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
@@ -248,9 +232,11 @@ WHERE genre.nama_genre = ?;""";
     );
   }
 
-  static FutureBuilder<List<BookCard>> makeBookCards(String parent,{String? genre, String? idMember}) {
+  static FutureBuilder<List<BookCard>> makeBookCards(String parent,
+      {String? genre, String? idMember}) {
     return FutureBuilder(
-      future: DatabaseWidgetGenerator._generateBookCardFromDB(parent, genre: genre, idMember: idMember),
+      future: DatabaseWidgetGenerator._generateBookCardFromDB(parent,
+          genre: genre, idMember: idMember),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
@@ -269,7 +255,6 @@ WHERE genre.nama_genre = ?;""";
           } else {
             return GridView.builder(
               padding: EdgeInsets.zero,
-              scrollDirection: Axis.vertical,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
@@ -288,59 +273,62 @@ WHERE genre.nama_genre = ?;""";
       },
     );
   }
-  static void pinjamBuku(String? idMember, int? idBuku) async{
+
+  static void pinjamBuku(String? idMember, int? idBuku) async {
     Database db = await SqliteHandler().myOpenDatabase();
     DateFormat sqlDateFormat = DateFormat("yyyy-MM-dd");
     DateTime today = DateTime.now();
     String todayDateString = sqlDateFormat.format(today);
 
-    if (idMember == null || idBuku == null){
+    if (idMember == null || idBuku == null) {
       // early exit to  prevent some accidental queries
       return;
     }
     // sisa pinjam harus dikurangi
-    await db.rawQuery("UPDATE member SET sisa_kuota = sisa_kuota - 1 WHERE id_member = ?", [idMember]);
+    await db.rawQuery(
+        "UPDATE member SET sisa_kuota = sisa_kuota - 1 WHERE id_member = ?",
+        [idMember]);
     // insert ke tabel peminjaman dengan subquery
-    final tabelLamaPinjam = await db.rawQuery("""SELECT lama_pinjam FROM tingkat WHERE id_tingkat = 
-(SELECT id_tingkat FROM member WHERE id_member = ?);""",
-    [idMember]);
+    final tabelLamaPinjam =
+        await db.rawQuery("""SELECT lama_pinjam FROM tingkat WHERE id_tingkat = 
+(SELECT id_tingkat FROM member WHERE id_member = ?);""", [idMember]);
     final int lamaPinjam = tabelLamaPinjam[0]["lama_pinjam"] as int;
     DateTime deadlineDateTime = today.add(Duration(days: lamaPinjam));
     String deadline = sqlDateFormat.format(deadlineDateTime);
 
-    await db.insert("peminjaman", 
-    {
-      "id_member":idMember,
-      "tgl_peminjaman":todayDateString,
-      "tgl_kadarluasa":deadline
+    await db.insert("peminjaman", {
+      "id_member": idMember,
+      "tgl_peminjaman": todayDateString,
+      "tgl_kadarluasa": deadline
     });
     // insert detail peminjaman
-    final idPeminjamanTerakhirTable = await db.rawQuery("SELECT MAX(id_peminjam) AS id FROM peminjaman");
+    final idPeminjamanTerakhirTable =
+        await db.rawQuery("SELECT MAX(id_peminjam) AS id FROM peminjaman");
     int idPinjam = idPeminjamanTerakhirTable[0]["id"] as int;
-    await db.insert("detail_pinjaman",
-    {
-      "id_peminjaman":idPinjam,
-      "id_buku":idBuku
-    });
+    await db.insert(
+        "detail_pinjaman", {"id_peminjaman": idPinjam, "id_buku": idBuku});
   }
-  static void kembalikanBuku(String idPeminjaman, String idBuku, String idMember) async{
+
+  static void kembalikanBuku(
+      String idPeminjaman, String idBuku, String idMember) async {
     Database db = await SqliteHandler().myOpenDatabase();
     // delete peminjaman
-    await db.delete("peminjaman", 
-    where: "id_peminjam = ?",
-    whereArgs: [idPeminjaman]
-    );
+    await db.delete("peminjaman",
+        where: "id_peminjam = ?", whereArgs: [idPeminjaman]);
     // delete detail peminjaman tidak perlu karena CASCADE
     // increment ulang buku
-    await db.rawQuery("UPDATE member SET sisa_kuota = sisa_kuota + 1 WHERE id_member = ?", [idMember]);
+    await db.rawQuery(
+        "UPDATE member SET sisa_kuota = sisa_kuota + 1 WHERE id_member = ?",
+        [idMember]);
   }
+
   // opsional?
   static void kembalikanSemuaBuku(String idMember) async {
     Database db = await SqliteHandler().myOpenDatabase();
-    int deletedAmnount = await db.delete("peminjaman", 
-    where: "id_member = ?",
-    whereArgs: [idMember]
-    );
-    await db.rawQuery("UPDATE member SET sisa_kuota = sisa_kuota + ? WHERE id_member = ?", [deletedAmnount,idMember]);
+    int deletedAmnount = await db
+        .delete("peminjaman", where: "id_member = ?", whereArgs: [idMember]);
+    await db.rawQuery(
+        "UPDATE member SET sisa_kuota = sisa_kuota + ? WHERE id_member = ?",
+        [deletedAmnount, idMember]);
   }
 }
